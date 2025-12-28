@@ -27,16 +27,29 @@ let settings = { workStart: '10:00', workEnd: '23:00', breaks: [] };
 // Загрузка данных
 export async function loadSettings() {
     try {
-        [procedures, clients, settings] = await Promise.all([
+        const [proceduresData, clientsData, settingsData] = await Promise.all([
             getProcedures(),
             getClients(),
             getSettings()
         ]);
         
+        // Обновляем данные только если они загружены успешно
+        if (proceduresData) {
+            procedures = proceduresData;
+        }
+        if (clientsData) {
+            clients = clientsData;
+        }
+        if (settingsData) {
+            settings = settingsData;
+        }
+        
         renderAllSettings();
         return { procedures, clients, settings };
     } catch (error) {
         console.error('Ошибка загрузки настроек:', error);
+        // Показываем текущие данные даже при ошибке
+        renderAllSettings();
         return { procedures, clients, settings };
     }
 }
@@ -105,12 +118,22 @@ export async function addProcedure(type, name, duration) {
     const newProcedure = {
         id: Date.now().toString() + Math.random(),
         name: name || 'Новая процедура',
-        duration: duration || 30
+        duration: duration || 60
     };
     
+    // Добавляем локально сразу для мгновенного отображения
     procedures[type].push(newProcedure);
-    await updateProcedures(procedures);
     renderProcedures();
+    
+    // Сохраняем в фоне
+    updateProcedures(procedures).catch(error => {
+        console.error('Ошибка сохранения процедуры:', error);
+        // Откатываем изменение при ошибке
+        procedures[type] = procedures[type].filter(p => p.id !== newProcedure.id);
+        renderProcedures();
+        alert('Ошибка при сохранении процедуры');
+    });
+    
     if (window.refreshCalendar) window.refreshCalendar();
     
     return newProcedure;
@@ -287,21 +310,29 @@ export function getSettingsData() {
     return settings;
 }
 
+// Функция для немедленного рендеринга настроек
+export function renderSettingsImmediately() {
+    renderAllSettings();
+}
+
+// Экспортируем для глобального доступа
+window.renderSettingsImmediately = renderSettingsImmediately;
+
 // Инициализация обработчиков настроек
 export function initSettings() {
     // Добавление процедур массажа
     const addMassageBtn = document.getElementById('addMassageProcedure');
     if (addMassageBtn) {
-        addMassageBtn.addEventListener('click', () => {
-            addProcedure('massage', 'Новая процедура', 60);
+        addMassageBtn.addEventListener('click', async () => {
+            await addProcedure('massage', 'Новая процедура', 60);
         });
     }
     
     // Добавление процедур лазера
     const addLaserBtn = document.getElementById('addLaserProcedure');
     if (addLaserBtn) {
-        addLaserBtn.addEventListener('click', () => {
-            addProcedure('laser', 'Новая процедура', 60);
+        addLaserBtn.addEventListener('click', async () => {
+            await addProcedure('laser', 'Новая процедура', 60);
         });
     }
     

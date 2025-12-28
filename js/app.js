@@ -47,6 +47,12 @@ async function init() {
         if (window.refreshCalendar) {
             window.refreshCalendar();
         }
+        // Обновляем настройки, если модальное окно открыто
+        if (document.getElementById('settingsModal')?.classList.contains('active')) {
+            if (window.renderSettingsImmediately) {
+                window.renderSettingsImmediately();
+            }
+        }
     });
     
     // Настройка callback'ов
@@ -401,9 +407,19 @@ function initSettingsModal() {
     const closeBtn = document.getElementById('closeSettingsModal');
     
     if (btnSettings) {
-        btnSettings.addEventListener('click', async () => {
-            await loadSettings();
+        btnSettings.addEventListener('click', () => {
+            // Открываем модальное окно сразу
             openModal('settingsModal');
+            // Показываем текущие данные сразу (если они есть)
+            if (window.renderSettingsImmediately) {
+                window.renderSettingsImmediately();
+            }
+            // Загружаем данные в фоне и обновляем
+            loadSettings().then(() => {
+                if (window.renderSettingsImmediately) {
+                    window.renderSettingsImmediately();
+                }
+            });
         });
     }
     
