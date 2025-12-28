@@ -41,11 +41,23 @@ export async function loadBookings() {
     try {
         bookings = await getBookings();
         clients = await getClients();
+        // Кэш уже обновлен в googleSheets.js
         updateTodayBookings();
         return bookings;
     } catch (error) {
         console.error('Ошибка загрузки записей:', error);
-        return [];
+        // Пытаемся загрузить из кэша
+        try {
+            const { getCachedBookings, getCachedClients } = await import('./cache.js');
+            const cachedBookings = getCachedBookings();
+            const cachedClients = getCachedClients();
+            if (cachedBookings) bookings = cachedBookings;
+            if (cachedClients) clients = cachedClients;
+            updateTodayBookings();
+        } catch (e) {
+            // Игнорируем ошибки кэша
+        }
+        return bookings;
     }
 }
 

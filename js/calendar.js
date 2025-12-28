@@ -78,6 +78,7 @@ export async function loadData() {
         bookings = bookingsData;
         settings = settingsData || { workStart: '09:00', workEnd: '21:00', breaks: [] };
         procedures = proceduresData;
+        // Кэш уже обновлен в googleSheets.js
         renderDaysSlots();
         updateHeaderDate();
         

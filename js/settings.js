@@ -52,12 +52,21 @@ export async function loadSettings() {
         // Обновляем данные только если они загружены успешно
         if (proceduresData) {
             procedures = proceduresData;
+            // Обновляем кэш
+            const { cacheProcedures } = await import('./cache.js');
+            cacheProcedures(procedures);
         }
         if (clientsData) {
             clients = clientsData;
+            // Обновляем кэш
+            const { cacheClients } = await import('./cache.js');
+            cacheClients(clients);
         }
         if (settingsData) {
             settings = settingsData;
+            // Обновляем кэш
+            const { cacheSettings } = await import('./cache.js');
+            cacheSettings(settings);
         }
         
         renderAllSettings();
