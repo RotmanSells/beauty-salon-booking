@@ -231,9 +231,8 @@ export async function addClientsFromInput(input) {
     // Сохраняем в фоне
     try {
         await addClients(phones);
-        // Обновляем список после успешного сохранения
-        clients = await getClients();
-        renderClients();
+        // НЕ перезагружаем данные, чтобы избежать мерцания
+        // Данные уже обновлены локально
     } catch (error) {
         console.error('Ошибка добавления клиентов:', error);
         // Откатываем при ошибке
