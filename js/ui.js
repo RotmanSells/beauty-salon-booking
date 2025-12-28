@@ -241,6 +241,10 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
         const data = window.proceduresData[containerId];
         if (!data) return;
         
+        // Сохраняем оригинальный массив для отката
+        const originalProcedures = [...data.procedures];
+        const deletedProcedure = originalProcedures.find(p => p.id === id);
+        
         // Удаляем локально сразу для мгновенного отклика
         const filtered = data.procedures.filter(p => p.id !== id);
         // Обновляем данные
@@ -251,8 +255,8 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
         data.onUpdate(filtered).catch(error => {
             console.error('Ошибка удаления процедуры:', error);
             // Откатываем при ошибке
-            data.procedures = [...data.procedures, ...data.procedures.filter(p => p.id === id)];
-            renderProceduresList(containerId, data.procedures, data.onUpdate, data.onDelete);
+            data.procedures = originalProcedures;
+            renderProceduresList(containerId, originalProcedures, data.onUpdate, data.onDelete);
         });
     };
 }
