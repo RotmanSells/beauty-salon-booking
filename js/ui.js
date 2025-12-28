@@ -324,37 +324,113 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
 }
 
 // Отображение перерывов
-export function renderBreaksList(breaks, onUpdate, onDelete) {
+export function renderBreaksList(breaks, onUpdate, onDelete, onAdd) {
     const container = document.getElementById('breaksList');
     if (!container) return;
     
-    container.innerHTML = breaks.map((breakItem, index) => `
+    // Сохраняем данные для доступа в глобальных функциях
+    if (!window.breaksData) {
+        window.breaksData = {};
+    }
+    window.breaksData['breaksList'] = {
+        breaks: breaks,
+        onUpdate: onUpdate,
+        onDelete: onDelete,
+        onAdd: onAdd
+    };
+    
+    let html = '';
+    
+    // Кнопка добавления перерыва в начале
+    html += `
+        <div class="form-group">
+            <button class="btn btn-primary" onclick="window.addNewBreak()">+ Добавить перерыв</button>
+        </div>
+    `;
+    
+    // Список перерывов
+    html += breaks.map((breakItem, index) => `
         <div class="form-group">
             <label>Перерыв ${index + 1}:</label>
             <div class="time-range">
-                <input type="time" class="form-time break-start-${index}" value="${breakItem.start}">
+                <input type="time" class="form-time break-start-${index}" value="${breakItem.start}" 
+                       onchange="window.updateBreak(${index}, 'start', this.value)">
                 <span>–</span>
-                <input type="time" class="form-time break-end-${index}" value="${breakItem.end}">
+                <input type="time" class="form-time break-end-${index}" value="${breakItem.end}" 
+                       onchange="window.updateBreak(${index}, 'end', this.value)">
             </div>
-            <button class="btn btn-primary break-save-${index}" onclick="window.saveBreak(${index})">Сохранить</button>
             <button class="btn btn-secondary break-delete-${index}" onclick="window.deleteBreak(${index})" style="margin-top: 8px;">Удалить</button>
         </div>
     `).join('');
     
-    // Сохранение перерыва
-    window.saveBreak = (index) => {
-        const startInput = container.querySelector(`.break-start-${index}`);
-        const endInput = container.querySelector(`.break-end-${index}`);
-        if (startInput && endInput) {
-            breaks[index].start = startInput.value;
-            breaks[index].end = endInput.value;
-            onUpdate(breaks);
+    container.innerHTML = html;
+    
+    // Обновление перерыва с автосохранением
+    let breakSaveTimeouts = {};
+    window.updateBreak = (index, field, value) => {
+        const data = window.breaksData['breaksList'];
+        if (!data) return;
+        
+        // Обновляем локально сразу
+        data.breaks[index][field] = value;
+        
+        // Обновляем календарь сразу
+        if (window.updateCalendarSettings) {
+            const currentSettings = window.getSettingsData ? window.getSettingsData() : {};
+            currentSettings.breaks = data.breaks;
+            window.updateCalendarSettings(currentSettings);
         }
+        if (window.refreshCalendar) {
+            window.refreshCalendar();
+        }
+        
+        // Сохраняем в фоне с задержкой (debounce)
+        clearTimeout(breakSaveTimeouts[index]);
+        breakSaveTimeouts[index] = setTimeout(() => {
+            data.onUpdate(data.breaks).catch(error => {
+                console.error('Ошибка сохранения перерыва:', error);
+            });
+        }, 500);
     };
     
+    // Удаление перерыва
     window.deleteBreak = (index) => {
-        breaks.splice(index, 1);
-        onUpdate(breaks);
+        const data = window.breaksData['breaksList'];
+        if (!data) return;
+        
+        // Сохраняем оригинальный массив для отката
+        const originalBreaks = [...data.breaks];
+        
+        // Удаляем локально сразу
+        data.breaks.splice(index, 1);
+        renderBreaksList(data.breaks, data.onUpdate, data.onDelete, data.onAdd);
+        
+        // Сохраняем в фоне
+        data.onDelete(index).catch(error => {
+            console.error('Ошибка удаления перерыва:', error);
+            // Откатываем при ошибке
+            data.breaks = originalBreaks;
+            renderBreaksList(originalBreaks, data.onUpdate, data.onDelete, data.onAdd);
+        });
+    };
+    
+    // Добавление нового перерыва
+    window.addNewBreak = () => {
+        const data = window.breaksData['breaksList'];
+        if (!data || !data.onAdd) return;
+        
+        // Добавляем локально сразу
+        const newBreak = { start: '13:00', end: '14:00' };
+        data.breaks.push(newBreak);
+        renderBreaksList(data.breaks, data.onUpdate, data.onDelete, data.onAdd);
+        
+        // Сохраняем в фоне
+        data.onAdd(newBreak.start, newBreak.end).catch(error => {
+            console.error('Ошибка добавления перерыва:', error);
+            // Откатываем при ошибке
+            data.breaks.pop();
+            renderBreaksList(data.breaks, data.onUpdate, data.onDelete, data.onAdd);
+        });
     };
 }
 

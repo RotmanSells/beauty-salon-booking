@@ -231,7 +231,59 @@ function renderWorktime() {
     if (startInput && endInput) {
         startInput.value = settings.workStart || '09:00';
         endInput.value = settings.workEnd || '21:00';
+        
+        // Удаляем старые обработчики если есть
+        const newStartInput = startInput.cloneNode(true);
+        const newEndInput = endInput.cloneNode(true);
+        startInput.parentNode.replaceChild(newStartInput, startInput);
+        endInput.parentNode.replaceChild(newEndInput, endInput);
+        
+        // Добавляем обработчики автосохранения
+        newStartInput.addEventListener('change', () => {
+            autoSaveWorktime();
+        });
+        newEndInput.addEventListener('change', () => {
+            autoSaveWorktime();
+        });
     }
+}
+
+// Автоматическое сохранение времени работы
+let worktimeSaveTimeout = null;
+function autoSaveWorktime() {
+    const startInput = document.getElementById('workStartTime');
+    const endInput = document.getElementById('workEndTime');
+    
+    if (!startInput || !endInput) return;
+    
+    const start = startInput.value;
+    const end = endInput.value;
+    
+    if (!validateTimeRange(start, end)) {
+        return;
+    }
+    
+    // Обновляем локально сразу
+    settings.workStart = start;
+    settings.workEnd = end;
+    
+    // Обновляем календарь сразу
+    if (window.updateCalendarSettings) {
+        window.updateCalendarSettings(settings);
+    }
+    if (window.refreshCalendar) {
+        window.refreshCalendar();
+    }
+    
+    // Сохраняем в фоне с небольшой задержкой (debounce)
+    clearTimeout(worktimeSaveTimeout);
+    worktimeSaveTimeout = setTimeout(async () => {
+        try {
+            await updateSettings(settings);
+        } catch (error) {
+            console.error('Ошибка сохранения времени работы:', error);
+        }
+    }, 500);
 }
 
 export async function saveWorktime(start, end) {
@@ -267,26 +319,26 @@ function renderBreaks() {
     renderBreaksList(
         settings.breaks || [],
         async (updatedBreaks) => {
-        // Обновляем локально сразу
-        settings.breaks = updatedBreaks;
-        renderBreaks();
-        
-        // Сохраняем в фоне
-        updateSettings(settings).then(() => {
-            // Обновляем настройки в calendar.js
-            if (window.updateCalendarSettings) {
-                window.updateCalendarSettings(settings);
-            }
+            // Обновляем локально сразу
+            settings.breaks = updatedBreaks;
+            renderBreaks();
             
-            // Обновляем календарь
-            if (window.refreshCalendar) {
-                window.refreshCalendar();
-            }
-        }).catch(error => {
-            console.error('Ошибка сохранения перерыва:', error);
-            // Перезагружаем настройки при ошибке
-            loadSettings();
-        });
+            // Сохраняем в фоне
+            updateSettings(settings).then(() => {
+                // Обновляем настройки в calendar.js
+                if (window.updateCalendarSettings) {
+                    window.updateCalendarSettings(settings);
+                }
+                
+                // Обновляем календарь
+                if (window.refreshCalendar) {
+                    window.refreshCalendar();
+                }
+            }).catch(error => {
+                console.error('Ошибка сохранения перерыва:', error);
+                // Перезагружаем настройки при ошибке
+                loadSettings();
+            });
         },
         async (index) => {
             // Удаляем локально сразу для мгновенного отклика
@@ -309,6 +361,42 @@ function renderBreaks() {
                 // Перезагружаем настройки при ошибке
                 loadSettings();
             });
+        },
+        async (start, end) => {
+            // Добавление нового перерыва
+            if (!validateTimeRange(start, end)) {
+                return false;
+            }
+            
+            // Добавляем локально сразу
+            if (!settings.breaks) {
+                settings.breaks = [];
+            }
+            settings.breaks.push({ start, end });
+            renderBreaks();
+            
+            // Сохраняем в фоне
+            try {
+                await updateSettings(settings);
+                
+                // Обновляем настройки в calendar.js
+                if (window.updateCalendarSettings) {
+                    window.updateCalendarSettings(settings);
+                }
+                
+                // Обновляем календарь
+                if (window.refreshCalendar) {
+                    window.refreshCalendar();
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Ошибка добавления перерыва:', error);
+                // Откатываем при ошибке
+                settings.breaks.pop();
+                renderBreaks();
+                return false;
+            }
         }
     );
 }
@@ -349,6 +437,9 @@ export function getSettingsData() {
     return settings;
 }
 
+// Экспортируем для глобального доступа
+window.getSettingsData = getSettingsData;
+
 // Функция для немедленного рендеринга настроек
 export function renderSettingsImmediately() {
     renderAllSettings();
@@ -387,28 +478,6 @@ export function initSettings() {
         });
     }
     
-    // Сохранение времени работы
-    const saveWorktimeBtn = document.getElementById('saveWorktime');
-    if (saveWorktimeBtn) {
-        saveWorktimeBtn.addEventListener('click', () => {
-            const startInput = document.getElementById('workStartTime');
-            const endInput = document.getElementById('workEndTime');
-            if (startInput && endInput) {
-                saveWorktime(startInput.value, endInput.value);
-            }
-        });
-    }
-    
-    // Добавление перерыва
-    const addBreakBtn = document.getElementById('addBreak');
-    if (addBreakBtn) {
-        addBreakBtn.addEventListener('click', () => {
-            const start = prompt('Время начала перерыва (например, 13:00):');
-            const end = prompt('Время окончания перерыва (например, 14:00):');
-            if (start && end) {
-                addBreak(start, end);
-            }
-        });
-    }
+    // Кнопки времени работы и перерывов теперь обрабатываются через автосохранение
 }
 
