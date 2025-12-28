@@ -1,7 +1,7 @@
 // Интеграция с Google Apps Script
 // URL веб-приложения Apps Script
 
-const scriptUrl = 'https://script.google.com/macros/s/AKfycbyWbn9S6TJC6D2Pf5Bmuqb4CuSw19HhUyHwHOToFeaTHFLfFtZnfwnuVdb7FUrvmwY/exec';
+const scriptUrl = 'https://script.google.com/macros/s/AKfycbzu5qYHQwwq73LklJ_CjLn51CGEmNERTWWTv9rp0H5Z6UzjUnEvmoXmQhIVydWU3sxZ/exec';
 
 export function setScriptUrl(url) {
     // URL установлен по умолчанию, но можно переопределить при необходимости
