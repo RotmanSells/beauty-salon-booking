@@ -216,21 +216,15 @@ export function renderClientsList(clients, onUpdate, onDelete) {
             renderClientsList(data.clients, data.onUpdate, data.onDelete);
             
             // Сохраняем в фоне через обновление всех клиентов
-            // Для простоты перезагружаем список после изменения
-            // В будущем можно добавить updateClient в API
+            // НЕ перезагружаем данные, чтобы избежать мерцания
+            // Просто обновляем кэш локально
             setTimeout(async () => {
                 try {
-                    const { getClients, cacheClients } = await import('./googleSheets.js');
-                    const updatedClients = await getClients();
-                    // Обновляем кэш
-                    cacheClients(updatedClients);
-                    // Обновляем локальный список если он изменился
-                    if (updatedClients.length !== data.clients.length) {
-                        data.clients = updatedClients;
-                        renderClientsList(updatedClients, data.onUpdate, data.onDelete);
-                    }
+                    const { cacheClients } = await import('./googleSheets.js');
+                    // Обновляем только кэш, не перезагружая данные
+                    cacheClients(data.clients);
                 } catch (error) {
-                    console.error('Ошибка синхронизации клиентов:', error);
+                    console.error('Ошибка обновления кэша клиентов:', error);
                 }
             }, 1000);
         }

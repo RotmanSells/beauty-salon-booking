@@ -192,11 +192,19 @@ function renderClients() {
         },
         async (clientId) => {
             // Удаление обрабатывается в ui.js мгновенно
-            // Сохраняем в фоне
-            await deleteClient(clientId);
-            // Обновляем список после удаления
-            clients = await getClients();
-            renderClients();
+            // Сохраняем в фоне, но НЕ перезагружаем данные
+            // чтобы избежать мерцания
+            try {
+                await deleteClient(clientId);
+                // Обновляем только локальный список, не перезагружая с сервера
+                // UI уже обновлен в ui.js, просто синхронизируем локальную переменную
+                clients = clients.filter(c => c.id !== clientId);
+            } catch (error) {
+                console.error('Ошибка удаления клиента:', error);
+                // При ошибке перезагружаем данные для восстановления состояния
+                clients = await getClients();
+                renderClients();
+            }
         }
     );
 }
