@@ -29,7 +29,7 @@ window.reloadClients = async () => {
 
 let procedures = { massage: [], laser: [] };
 let clients = [];
-let settings = { workStart: '10:00', workEnd: '23:00', breaks: [] };
+let settings = { workStart: '09:00', workEnd: '21:00', breaks: [] };
 
 // Инициализация кэша при загрузке модуля
 (async () => {
@@ -41,7 +41,13 @@ let settings = { workStart: '10:00', workEnd: '23:00', breaks: [] };
         
         if (cachedProcedures) procedures = cachedProcedures;
         if (cachedClients) clients = cachedClients;
-        if (cachedSettings) settings = cachedSettings;
+        if (cachedSettings) {
+            settings = {
+                workStart: cachedSettings.workStart || '09:00',
+                workEnd: cachedSettings.workEnd || '21:00',
+                breaks: cachedSettings.breaks || []
+            };
+        }
     } catch (error) {
         // Игнорируем ошибки при загрузке кэша
     }
@@ -70,7 +76,12 @@ export async function loadSettings() {
             cacheClients(clients);
         }
         if (settingsData) {
-            settings = settingsData;
+            // Убеждаемся, что все поля настроек присутствуют
+            settings = {
+                workStart: settingsData.workStart || '09:00',
+                workEnd: settingsData.workEnd || '21:00',
+                breaks: settingsData.breaks || []
+            };
             // Обновляем кэш
             const { cacheSettings } = await import('./cache.js');
             cacheSettings(settings);
