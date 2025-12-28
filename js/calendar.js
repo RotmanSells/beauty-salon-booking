@@ -19,6 +19,28 @@ let selectedSlot = null;
 let currentFilter = 'free'; // 'free' или 'busy'
 let daysToShow = 30; // Количество дней для отображения (месяц)
 
+// Загрузка из кэша при инициализации
+(async () => {
+    try {
+        const { getCachedBookings, getCachedSettings, getCachedProcedures } = await import('./cache.js');
+        const cachedBookings = getCachedBookings();
+        const cachedSettings = getCachedSettings();
+        const cachedProcedures = getCachedProcedures();
+        
+        if (cachedBookings) bookings = cachedBookings;
+        if (cachedSettings) settings = cachedSettings;
+        if (cachedProcedures) procedures = cachedProcedures;
+        
+        // Рендерим календарь сразу, если есть кэш
+        if (cachedSettings || cachedBookings) {
+            renderDaysSlots();
+            updateHeaderDate();
+        }
+    } catch (error) {
+        // Игнорируем ошибки при загрузке кэша
+    }
+})();
+
 // Экспортируем функцию для обновления данных о записях
 export function updateBookings(newBookings) {
     bookings = newBookings;

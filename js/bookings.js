@@ -18,6 +18,25 @@ import {
 let bookings = [];
 let clients = [];
 
+// Загрузка из кэша при инициализации
+(async () => {
+    try {
+        const { getCachedBookings, getCachedClients } = await import('./cache.js');
+        const cachedBookings = getCachedBookings();
+        const cachedClients = getCachedClients();
+        
+        if (cachedBookings) bookings = cachedBookings;
+        if (cachedClients) clients = cachedClients;
+        
+        // Обновляем календарь сразу, если есть кэш
+        if (cachedBookings && window.updateCalendarBookings) {
+            window.updateCalendarBookings(bookings);
+        }
+    } catch (error) {
+        // Игнорируем ошибки при загрузке кэша
+    }
+})();
+
 export async function loadBookings() {
     try {
         bookings = await getBookings();

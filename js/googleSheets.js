@@ -71,18 +71,44 @@ async function callScript(functionName, params = {}, useGet = false) {
 // Экспортируемые функции для работы с записями
 export async function getBookings() {
     try {
+        // Пытаемся загрузить из кэша сначала
+        const { getCachedBookings, cacheBookings } = await import('./cache.js');
+        const cached = getCachedBookings();
+        if (cached) {
+            // Загружаем свежие данные в фоне
+            callScript('getBookings', {}, true).then(result => {
+                if (result && result.data) {
+                    cacheBookings(result.data);
+                }
+            }).catch(() => {}); // Игнорируем ошибки фоновой загрузки
+            return cached;
+        }
+        
         const result = await callScript('getBookings', {}, true); // Используем GET
-        return result.data || [];
+        const data = result.data || [];
+        cacheBookings(data);
+        return data;
     } catch (error) {
         console.error('Ошибка получения записей:', error);
-        return [];
+        // Пытаемся вернуть из кэша даже при ошибке
+        const { getCachedBookings } = await import('./cache.js');
+        const cached = getCachedBookings();
+        return cached || [];
     }
 }
 
 export async function createBooking(booking) {
     try {
         const result = await callScript('createBooking', booking, true); // Используем GET
-        return result.data || null;
+        const data = result.data || null;
+        if (data) {
+            // Обновляем кэш
+            const { getCachedBookings, cacheBookings } = await import('./cache.js');
+            const cached = getCachedBookings() || [];
+            cached.push(data);
+            cacheBookings(cached);
+        }
+        return data;
     } catch (error) {
         console.error('Ошибка создания записи:', error);
         throw error;
@@ -92,7 +118,18 @@ export async function createBooking(booking) {
 export async function updateBooking(id, updates) {
     try {
         const result = await callScript('updateBooking', { id, updates }, true); // Используем GET
-        return result.data || null;
+        const data = result.data || null;
+        if (data) {
+            // Обновляем кэш
+            const { getCachedBookings, cacheBookings } = await import('./cache.js');
+            const cached = getCachedBookings() || [];
+            const index = cached.findIndex(b => b.id === id);
+            if (index !== -1) {
+                cached[index] = { ...cached[index], ...updates };
+            }
+            cacheBookings(cached);
+        }
+        return data;
     } catch (error) {
         console.error('Ошибка обновления записи:', error);
         throw error;
@@ -102,6 +139,11 @@ export async function updateBooking(id, updates) {
 export async function deleteBooking(id) {
     try {
         await callScript('deleteBooking', { id }, true); // Используем GET
+        // Обновляем кэш
+        const { getCachedBookings, cacheBookings } = await import('./cache.js');
+        const cached = getCachedBookings() || [];
+        const filtered = cached.filter(b => b.id !== id);
+        cacheBookings(filtered);
         return true;
     } catch (error) {
         console.error('Ошибка удаления записи:', error);
@@ -112,16 +154,38 @@ export async function deleteBooking(id) {
 // Экспортируемые функции для работы с процедурами
 export async function getProcedures() {
     try {
+        // Пытаемся загрузить из кэша сначала
+        const { getCachedProcedures, cacheProcedures } = await import('./cache.js');
+        const cached = getCachedProcedures();
+        if (cached) {
+            // Загружаем свежие данные в фоне
+            callScript('getProcedures', {}, true).then(result => {
+                if (result && result.data) {
+                    cacheProcedures(result.data);
+                }
+            }).catch(() => {}); // Игнорируем ошибки фоновой загрузки
+            return cached;
+        }
+        
         const result = await callScript('getProcedures', {}, true); // Используем GET
-        return result.data || { massage: [], laser: [] };
+        const data = result.data || { massage: [], laser: [] };
+        cacheProcedures(data);
+        return data;
     } catch (error) {
         console.error('Ошибка получения процедур:', error);
-        return { massage: [], laser: [] };
+        // Пытаемся вернуть из кэша даже при ошибке
+        const { getCachedProcedures } = await import('./cache.js');
+        const cached = getCachedProcedures();
+        return cached || { massage: [], laser: [] };
     }
 }
 
 export async function updateProcedures(procedures) {
     try {
+        // Сначала обновляем кэш для мгновенного отклика
+        const { cacheProcedures } = await import('./cache.js');
+        cacheProcedures(procedures);
+        
         await callScript('updateProcedures', { procedures }, true); // Используем GET
         return true;
     } catch (error) {
@@ -133,18 +197,43 @@ export async function updateProcedures(procedures) {
 // Экспортируемые функции для работы с клиентами
 export async function getClients() {
     try {
+        // Пытаемся загрузить из кэша сначала
+        const { getCachedClients, cacheClients } = await import('./cache.js');
+        const cached = getCachedClients();
+        if (cached) {
+            // Загружаем свежие данные в фоне
+            callScript('getClients', {}, true).then(result => {
+                if (result && result.data) {
+                    cacheClients(result.data);
+                }
+            }).catch(() => {}); // Игнорируем ошибки фоновой загрузки
+            return cached;
+        }
+        
         const result = await callScript('getClients', {}, true); // Используем GET
-        return result.data || [];
+        const data = result.data || [];
+        cacheClients(data);
+        return data;
     } catch (error) {
         console.error('Ошибка получения клиентов:', error);
-        return [];
+        // Пытаемся вернуть из кэша даже при ошибке
+        const { getCachedClients } = await import('./cache.js');
+        const cached = getCachedClients();
+        return cached || [];
     }
 }
 
 export async function addClients(phones) {
     try {
         const result = await callScript('addClients', { phones }, true); // Используем GET
-        return result.data || [];
+        const data = result.data || [];
+        if (data.length > 0) {
+            // Обновляем кэш
+            const { getCachedClients, cacheClients } = await import('./cache.js');
+            const cached = getCachedClients() || [];
+            cacheClients([...cached, ...data]);
+        }
+        return data;
     } catch (error) {
         console.error('Ошибка добавления клиентов:', error);
         throw error;
@@ -154,6 +243,11 @@ export async function addClients(phones) {
 export async function deleteClient(id) {
     try {
         await callScript('deleteClient', { id }, true); // Используем GET
+        // Обновляем кэш
+        const { getCachedClients, cacheClients } = await import('./cache.js');
+        const cached = getCachedClients() || [];
+        const filtered = cached.filter(c => c.id !== id);
+        cacheClients(filtered);
         return true;
     } catch (error) {
         console.error('Ошибка удаления клиента:', error);
@@ -164,16 +258,38 @@ export async function deleteClient(id) {
 // Экспортируемые функции для работы с настройками
 export async function getSettings() {
     try {
+        // Пытаемся загрузить из кэша сначала
+        const { getCachedSettings, cacheSettings } = await import('./cache.js');
+        const cached = getCachedSettings();
+        if (cached) {
+            // Загружаем свежие данные в фоне
+            callScript('getSettings', {}, true).then(result => {
+                if (result && result.data) {
+                    cacheSettings(result.data);
+                }
+            }).catch(() => {}); // Игнорируем ошибки фоновой загрузки
+            return cached;
+        }
+        
         const result = await callScript('getSettings', {}, true); // Используем GET
-        return result.data || { workStart: '09:00', workEnd: '21:00', breaks: [] };
+        const data = result.data || { workStart: '09:00', workEnd: '21:00', breaks: [] };
+        cacheSettings(data);
+        return data;
     } catch (error) {
         console.error('Ошибка получения настроек:', error);
-        return { workStart: '09:00', workEnd: '21:00', breaks: [] };
+        // Пытаемся вернуть из кэша даже при ошибке
+        const { getCachedSettings } = await import('./cache.js');
+        const cached = getCachedSettings();
+        return cached || { workStart: '09:00', workEnd: '21:00', breaks: [] };
     }
 }
 
 export async function updateSettings(settings) {
     try {
+        // Сначала обновляем кэш для мгновенного отклика
+        const { cacheSettings } = await import('./cache.js');
+        cacheSettings(settings);
+        
         const result = await callScript('updateSettings', { settings }, true); // Используем GET
         return result.data || null;
     } catch (error) {

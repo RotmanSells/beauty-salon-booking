@@ -24,6 +24,22 @@ let procedures = { massage: [], laser: [] };
 let clients = [];
 let settings = { workStart: '10:00', workEnd: '23:00', breaks: [] };
 
+// Инициализация кэша при загрузке модуля
+(async () => {
+    try {
+        const { getCachedProcedures, getCachedClients, getCachedSettings } = await import('./cache.js');
+        const cachedProcedures = getCachedProcedures();
+        const cachedClients = getCachedClients();
+        const cachedSettings = getCachedSettings();
+        
+        if (cachedProcedures) procedures = cachedProcedures;
+        if (cachedClients) clients = cachedClients;
+        if (cachedSettings) settings = cachedSettings;
+    } catch (error) {
+        // Игнорируем ошибки при загрузке кэша
+    }
+})();
+
 // Загрузка данных
 export async function loadSettings() {
     try {
