@@ -761,9 +761,9 @@ select {
     border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: var(--card-bg);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    padding: 12px;
+    padding: 8px;
     color: var(--text-primary);
     cursor: pointer;
     transition: var(--transition);
@@ -841,7 +841,9 @@ select {
     margin-bottom: 20px;
     border-bottom: 2px solid var(--border-color);
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
 
 .settings-tabs::-webkit-scrollbar {
@@ -1004,30 +1006,22 @@ select {
     margin-bottom: 16px;
 }
 
-.break-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
+.break-item-form {
+    margin-bottom: 20px;
+    padding: 16px;
     background: #F9FAFB;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    transition: var(--transition);
 }
 
-.break-item:hover {
-    background: #F0F4F8;
-    border-color: var(--text-secondary);
+.break-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
 }
 
-.break-item .form-time {
+.break-actions .btn {
     flex: 1;
-}
-
-.break-item span {
-    font-size: 16px;
-    color: var(--text-secondary);
-    font-weight: 500;
 }
 
 /* Адаптивность - только мобильные устройства */

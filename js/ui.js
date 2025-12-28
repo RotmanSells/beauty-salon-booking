@@ -223,9 +223,17 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
         }
     };
     
-    window.deleteProcedure = (id) => {
+    window.deleteProcedure = async (id) => {
+        // Удаляем локально сразу для мгновенного отклика
         const filtered = procedures.filter(p => p.id !== id);
-        onUpdate(filtered);
+        // Обновляем UI сразу
+        renderProceduresList(containerId, filtered, onUpdate, onDelete);
+        // Сохраняем в фоне
+        onUpdate(filtered).catch(error => {
+            console.error('Ошибка удаления процедуры:', error);
+            // Откатываем при ошибке
+            renderProceduresList(containerId, procedures, onUpdate, onDelete);
+        });
     };
 }
 
@@ -235,24 +243,29 @@ export function renderBreaksList(breaks, onUpdate, onDelete) {
     if (!container) return;
     
     container.innerHTML = breaks.map((breakItem, index) => `
-        <div class="break-item">
-            <input type="time" class="form-time" value="${breakItem.start}" 
-                   onchange="window.updateBreak(${index}, 'start', this.value)">
-            <span>–</span>
-            <input type="time" class="form-time" value="${breakItem.end}" 
-                   onchange="window.updateBreak(${index}, 'end', this.value)">
-            <button class="btn-icon danger" onclick="window.deleteBreak(${index})" title="Удалить">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-            </button>
+        <div class="form-group break-item-form">
+            <label>Перерыв ${index + 1}:</label>
+            <div class="time-range">
+                <input type="time" class="form-time break-start-${index}" value="${breakItem.start}">
+                <span>–</span>
+                <input type="time" class="form-time break-end-${index}" value="${breakItem.end}">
+            </div>
+            <div class="break-actions">
+                <button class="btn btn-primary break-save-${index}" onclick="window.saveBreak(${index})">Сохранить</button>
+                <button class="btn btn-secondary break-delete-${index}" onclick="window.deleteBreak(${index})">Удалить</button>
+            </div>
         </div>
     `).join('');
     
-    window.updateBreak = (index, field, value) => {
-        breaks[index][field] = value;
-        onUpdate(breaks);
+    // Сохранение перерыва
+    window.saveBreak = (index) => {
+        const startInput = container.querySelector(`.break-start-${index}`);
+        const endInput = container.querySelector(`.break-end-${index}`);
+        if (startInput && endInput) {
+            breaks[index].start = startInput.value;
+            breaks[index].end = endInput.value;
+            onUpdate(breaks);
+        }
     };
     
     window.deleteBreak = (index) => {

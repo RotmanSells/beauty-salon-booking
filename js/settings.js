@@ -236,23 +236,12 @@ function renderBreaks() {
     renderBreaksList(
         settings.breaks || [],
         async (updatedBreaks) => {
+        // Обновляем локально сразу
         settings.breaks = updatedBreaks;
-        await updateSettings(settings);
+        renderBreaks();
         
-        // Обновляем настройки в calendar.js
-        if (window.updateCalendarSettings) {
-            window.updateCalendarSettings(settings);
-        }
-        
-        // Обновляем календарь
-        if (window.refreshCalendar) {
-            window.refreshCalendar();
-        }
-        },
-        async (index) => {
-            settings.breaks.splice(index, 1);
-            await updateSettings(settings);
-            
+        // Сохраняем в фоне
+        updateSettings(settings).then(() => {
             // Обновляем настройки в calendar.js
             if (window.updateCalendarSettings) {
                 window.updateCalendarSettings(settings);
@@ -262,6 +251,33 @@ function renderBreaks() {
             if (window.refreshCalendar) {
                 window.refreshCalendar();
             }
+        }).catch(error => {
+            console.error('Ошибка сохранения перерыва:', error);
+            // Перезагружаем настройки при ошибке
+            loadSettings();
+        });
+        },
+        async (index) => {
+            // Удаляем локально сразу для мгновенного отклика
+            settings.breaks.splice(index, 1);
+            renderBreaks();
+            
+            // Сохраняем в фоне
+            updateSettings(settings).then(() => {
+                // Обновляем настройки в calendar.js
+                if (window.updateCalendarSettings) {
+                    window.updateCalendarSettings(settings);
+                }
+                
+                // Обновляем календарь
+                if (window.refreshCalendar) {
+                    window.refreshCalendar();
+                }
+            }).catch(error => {
+                console.error('Ошибка удаления перерыва:', error);
+                // Перезагружаем настройки при ошибке
+                loadSettings();
+            });
         }
     );
 }
