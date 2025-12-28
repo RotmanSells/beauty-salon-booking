@@ -1006,23 +1006,7 @@ select {
     margin-bottom: 16px;
 }
 
-.break-item-form {
-    margin-bottom: 20px;
-    padding: 16px;
-    background: #F9FAFB;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-}
-
-.break-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.break-actions .btn {
-    flex: 1;
-}
+/* Перерывы используют те же стили что и время работы через form-group */
 
 /* Адаптивность - только мобильные устройства */
 @media (min-width: 768px) {

@@ -267,17 +267,15 @@ export function renderBreaksList(breaks, onUpdate, onDelete) {
     if (!container) return;
     
     container.innerHTML = breaks.map((breakItem, index) => `
-        <div class="form-group break-item-form">
+        <div class="form-group">
             <label>Перерыв ${index + 1}:</label>
             <div class="time-range">
                 <input type="time" class="form-time break-start-${index}" value="${breakItem.start}">
                 <span>–</span>
                 <input type="time" class="form-time break-end-${index}" value="${breakItem.end}">
             </div>
-            <div class="break-actions">
-                <button class="btn btn-primary break-save-${index}" onclick="window.saveBreak(${index})">Сохранить</button>
-                <button class="btn btn-secondary break-delete-${index}" onclick="window.deleteBreak(${index})">Удалить</button>
-            </div>
+            <button class="btn btn-primary break-save-${index}" onclick="window.saveBreak(${index})">Сохранить</button>
+            <button class="btn btn-secondary break-delete-${index}" onclick="window.deleteBreak(${index})" style="margin-top: 8px;">Удалить</button>
         </div>
     `).join('');
     
