@@ -81,7 +81,7 @@ export async function getBookings() {
 
 export async function createBooking(booking) {
     try {
-        const result = await callScript('createBooking', booking);
+        const result = await callScript('createBooking', booking, true); // Используем GET
         return result.data || null;
     } catch (error) {
         console.error('Ошибка создания записи:', error);
@@ -91,7 +91,7 @@ export async function createBooking(booking) {
 
 export async function updateBooking(id, updates) {
     try {
-        const result = await callScript('updateBooking', { id, updates });
+        const result = await callScript('updateBooking', { id, updates }, true); // Используем GET
         return result.data || null;
     } catch (error) {
         console.error('Ошибка обновления записи:', error);
@@ -101,7 +101,7 @@ export async function updateBooking(id, updates) {
 
 export async function deleteBooking(id) {
     try {
-        await callScript('deleteBooking', { id });
+        await callScript('deleteBooking', { id }, true); // Используем GET
         return true;
     } catch (error) {
         console.error('Ошибка удаления записи:', error);
@@ -122,7 +122,7 @@ export async function getProcedures() {
 
 export async function updateProcedures(procedures) {
     try {
-        await callScript('updateProcedures', { procedures });
+        await callScript('updateProcedures', { procedures }, true); // Используем GET
         return true;
     } catch (error) {
         console.error('Ошибка обновления процедур:', error);
@@ -143,7 +143,7 @@ export async function getClients() {
 
 export async function addClients(phones) {
     try {
-        const result = await callScript('addClients', { phones });
+        const result = await callScript('addClients', { phones }, true); // Используем GET
         return result.data || [];
     } catch (error) {
         console.error('Ошибка добавления клиентов:', error);
@@ -153,7 +153,7 @@ export async function addClients(phones) {
 
 export async function deleteClient(id) {
     try {
-        await callScript('deleteClient', { id });
+        await callScript('deleteClient', { id }, true); // Используем GET
         return true;
     } catch (error) {
         console.error('Ошибка удаления клиента:', error);
@@ -174,7 +174,7 @@ export async function getSettings() {
 
 export async function updateSettings(settings) {
     try {
-        const result = await callScript('updateSettings', { settings });
+        const result = await callScript('updateSettings', { settings }, true); // Используем GET
         return result.data || null;
     } catch (error) {
         console.error('Ошибка обновления настроек:', error);
