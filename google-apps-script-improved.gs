@@ -9,7 +9,21 @@ function doGet(e) {
     const action = e.parameter.action;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    let result = handleAction(action, e.parameter, ss);
+    // Преобразуем параметры GET запроса в формат, совместимый с handleAction
+    const data = {};
+    for (let key in e.parameter) {
+      if (key !== 'action') {
+        try {
+          // Пытаемся распарсить JSON, если это объект
+          data[key] = JSON.parse(e.parameter[key]);
+        } catch (e) {
+          // Если не JSON, используем как есть
+          data[key] = e.parameter[key];
+        }
+      }
+    }
+    
+    let result = handleAction(action, data, ss);
     
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);

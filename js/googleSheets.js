@@ -13,18 +13,43 @@ export function getScriptUrl() {
 }
 
 // Базовые функции для работы с Google Sheets через Apps Script
-async function callScript(functionName, params = {}) {
+async function callScript(functionName, params = {}, useGet = false) {
     try {
-        const response = await fetch(scriptUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        let response;
+        
+        if (useGet) {
+            // Используем GET для операций чтения (не требует preflight)
+            const urlParams = new URLSearchParams({
                 action: functionName,
-                ...params
-            })
-        });
+                ...Object.keys(params).reduce((acc, key) => {
+                    if (params[key] !== undefined && params[key] !== null) {
+                        acc[key] = typeof params[key] === 'object' 
+                            ? JSON.stringify(params[key]) 
+                            : params[key];
+                    }
+                    return acc;
+                }, {})
+            });
+            
+            response = await fetch(`${scriptUrl}?${urlParams.toString()}`, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            });
+        } else {
+            // Используем POST для операций записи
+            response = await fetch(scriptUrl, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: functionName,
+                    ...params
+                })
+            });
+        }
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,7 +71,7 @@ async function callScript(functionName, params = {}) {
 // Экспортируемые функции для работы с записями
 export async function getBookings() {
     try {
-        const result = await callScript('getBookings');
+        const result = await callScript('getBookings', {}, true); // Используем GET
         return result.data || [];
     } catch (error) {
         console.error('Ошибка получения записей:', error);
@@ -87,7 +112,7 @@ export async function deleteBooking(id) {
 // Экспортируемые функции для работы с процедурами
 export async function getProcedures() {
     try {
-        const result = await callScript('getProcedures');
+        const result = await callScript('getProcedures', {}, true); // Используем GET
         return result.data || { massage: [], laser: [] };
     } catch (error) {
         console.error('Ошибка получения процедур:', error);
@@ -108,7 +133,7 @@ export async function updateProcedures(procedures) {
 // Экспортируемые функции для работы с клиентами
 export async function getClients() {
     try {
-        const result = await callScript('getClients');
+        const result = await callScript('getClients', {}, true); // Используем GET
         return result.data || [];
     } catch (error) {
         console.error('Ошибка получения клиентов:', error);
@@ -139,7 +164,7 @@ export async function deleteClient(id) {
 // Экспортируемые функции для работы с настройками
 export async function getSettings() {
     try {
-        const result = await callScript('getSettings');
+        const result = await callScript('getSettings', {}, true); // Используем GET
         return result.data || { workStart: '09:00', workEnd: '21:00', breaks: [] };
     } catch (error) {
         console.error('Ошибка получения настроек:', error);
