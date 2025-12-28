@@ -172,9 +172,19 @@ export function renderTodayBookings(bookings, onEdit, onCall, onDelete) {
 }
 
 // Отображение списка клиентов
-export function renderClientsList(clients, onDelete) {
+export function renderClientsList(clients, onUpdate, onDelete) {
     const container = document.getElementById('clientsList');
     if (!container) return;
+    
+    // Сохраняем данные для доступа в глобальных функциях
+    if (!window.clientsData) {
+        window.clientsData = {};
+    }
+    window.clientsData['clientsList'] = {
+        clients: clients,
+        onUpdate: onUpdate,
+        onDelete: onDelete
+    };
     
     if (clients.length === 0) {
         container.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Нет клиентов</p>';
@@ -182,9 +192,11 @@ export function renderClientsList(clients, onDelete) {
     }
     
     container.innerHTML = clients.map(client => `
-        <div class="client-item">
-            <span>${client.phone || ''}</span>
-            <button class="btn-icon danger" onclick="window.deleteClient('${client.id}')" title="Удалить">
+        <div class="procedure-item">
+            <input type="text" value="${client.phone || ''}" 
+                   onchange="window.updateClient('${client.id}', 'phone', this.value)"
+                   placeholder="Номер телефона">
+            <button class="btn-icon danger" onclick="window.deleteClientById('${client.id}')" title="Удалить">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -193,7 +205,57 @@ export function renderClientsList(clients, onDelete) {
         </div>
     `).join('');
     
-    window.deleteClient = onDelete;
+    window.updateClient = async (id, field, value) => {
+        const data = window.clientsData['clientsList'];
+        if (!data) return;
+        
+        const client = data.clients.find(c => c.id === id);
+        if (client) {
+            // Обновляем локально сразу
+            client[field] = value;
+            renderClientsList(data.clients, data.onUpdate, data.onDelete);
+            
+            // Сохраняем в фоне через обновление всех клиентов
+            // Для простоты перезагружаем список после изменения
+            // В будущем можно добавить updateClient в API
+            setTimeout(async () => {
+                try {
+                    const { getClients, cacheClients } = await import('./googleSheets.js');
+                    const updatedClients = await getClients();
+                    // Обновляем кэш
+                    cacheClients(updatedClients);
+                    // Обновляем локальный список если он изменился
+                    if (updatedClients.length !== data.clients.length) {
+                        data.clients = updatedClients;
+                        renderClientsList(updatedClients, data.onUpdate, data.onDelete);
+                    }
+                } catch (error) {
+                    console.error('Ошибка синхронизации клиентов:', error);
+                }
+            }, 1000);
+        }
+    };
+    
+    window.deleteClientById = async (id) => {
+        const data = window.clientsData['clientsList'];
+        if (!data) return;
+        
+        // Сохраняем оригинальный массив для отката
+        const originalClients = [...data.clients];
+        
+        // Удаляем локально сразу для мгновенного отклика
+        const filtered = data.clients.filter(c => c.id !== id);
+        data.clients = filtered;
+        // Обновляем UI сразу
+        renderClientsList(filtered, data.onUpdate, data.onDelete);
+        // Сохраняем в фоне
+        data.onDelete(id).catch(error => {
+            console.error('Ошибка удаления клиента:', error);
+            // Откатываем при ошибке
+            data.clients = originalClients;
+            renderClientsList(originalClients, data.onUpdate, data.onDelete);
+        });
+    };
 }
 
 // Отображение списка процедур в настройках

@@ -18,6 +18,13 @@ import {
     renderClientsList,
     renderBreaksList
 } from './ui.js';
+
+// Функция для перезагрузки клиентов (используется в ui.js при ошибках)
+window.reloadClients = async () => {
+    const { getClients } = await import('./googleSheets.js');
+    clients = await getClients();
+    renderClients();
+};
 // refreshCalendar будет доступен через window
 
 let procedures = { massage: [], laser: [] };
@@ -167,8 +174,16 @@ export async function addProcedure(type, name, duration) {
 function renderClients() {
     renderClientsList(
         clients,
+        async (updatedClients) => {
+            // Обновляем локально сразу
+            clients = updatedClients;
+            renderClients();
+        },
         async (clientId) => {
+            // Удаление обрабатывается в ui.js мгновенно
+            // Сохраняем в фоне
             await deleteClient(clientId);
+            // Обновляем список после удаления
             clients = await getClients();
             renderClients();
         }
@@ -183,12 +198,28 @@ export async function addClientsFromInput(input) {
         return;
     }
     
+    // Создаем новых клиентов локально сразу для мгновенного отображения
+    const newClients = phones.map(phone => ({
+        id: Date.now().toString() + Math.random() + '_' + phone,
+        phone: phone,
+        name: ''
+    }));
+    
+    // Добавляем локально сразу
+    clients = [...clients, ...newClients];
+    renderClients();
+    
+    // Сохраняем в фоне
     try {
-        const newClients = await addClients(phones);
+        await addClients(phones);
+        // Обновляем список после успешного сохранения
         clients = await getClients();
         renderClients();
     } catch (error) {
         console.error('Ошибка добавления клиентов:', error);
+        // Откатываем при ошибке
+        clients = clients.filter(c => !newClients.some(nc => nc.id === c.id));
+        renderClients();
     }
 }
 
