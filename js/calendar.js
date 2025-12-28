@@ -54,12 +54,22 @@ export async function loadData() {
             getProceduresData()
         ]);
         bookings = bookingsData;
-        settings = settingsData;
+        settings = settingsData || { workStart: '09:00', workEnd: '21:00', breaks: [] };
         procedures = proceduresData;
         renderDaysSlots();
         updateHeaderDate();
+        
+        // Обновляем календарь в других модулях
+        if (window.updateCalendarBookings) {
+            window.updateCalendarBookings(bookings);
+        }
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
+        // В случае ошибки используем дефолтные настройки
+        if (!settings) {
+            settings = { workStart: '09:00', workEnd: '21:00', breaks: [] };
+            renderDaysSlots();
+        }
     }
 }
 
@@ -102,14 +112,10 @@ function renderDaysSlots() {
     
     container.innerHTML = '';
     
-    if (!settings) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Загрузка...</div>';
-        return;
-    }
-    
-    const workStart = settings.workStart || '10:00';
-    const workEnd = settings.workEnd || '23:00';
-    const breaks = settings.breaks || [];
+    // Используем дефолтные настройки, если еще не загружены
+    const workStart = settings?.workStart || '09:00';
+    const workEnd = settings?.workEnd || '21:00';
+    const breaks = settings?.breaks || [];
     
     // Все процедуры длятся 1 час (60 минут)
     const minDuration = 60;
@@ -290,6 +296,11 @@ export function initCalendar() {
     currentDate = new Date();
     updateHeaderDate();
     
+    // Показываем календарь сразу с дефолтными настройками
+    settings = { workStart: '09:00', workEnd: '21:00', breaks: [] };
+    renderDaysSlots();
+    
+    // Загружаем данные в фоне и обновляем календарь после загрузки
     loadData();
 }
 

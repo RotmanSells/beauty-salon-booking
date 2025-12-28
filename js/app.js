@@ -33,14 +33,21 @@ async function init() {
     initEditModal();
     initSettingsModal();
     
-    // Загрузка данных
-    await loadSettings();
-    await loadBookings();
-    
-    // Инициализация модулей
+    // Инициализация модулей сразу (календарь показывается с дефолтными настройками)
     initCalendar();
     initBookings();
     initSettings();
+    
+    // Загрузка данных в фоне (параллельно)
+    Promise.all([
+        loadSettings(),
+        loadBookings()
+    ]).then(() => {
+        // Обновляем календарь после загрузки данных
+        if (window.refreshCalendar) {
+            window.refreshCalendar();
+        }
+    });
     
     // Настройка callback'ов
     setOpenBookingModalCallback(openBookingModalHandler);
