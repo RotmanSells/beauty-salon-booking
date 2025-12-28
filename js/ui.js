@@ -201,12 +201,23 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
     const container = document.getElementById(containerId);
     if (!container) return;
     
+    // Сохраняем данные для доступа в глобальных функциях
+    if (!window.proceduresData) {
+        window.proceduresData = {};
+    }
+    window.proceduresData[containerId] = {
+        procedures: procedures,
+        onUpdate: onUpdate,
+        onDelete: onDelete,
+        containerId: containerId
+    };
+    
     container.innerHTML = procedures.map(procedure => `
         <div class="procedure-item">
             <input type="text" value="${procedure.name}" 
-                   onchange="window.updateProcedure('${procedure.id}', 'name', this.value)"
+                   onchange="window.updateProcedure('${containerId}', '${procedure.id}', 'name', this.value)"
                    placeholder="Название процедуры">
-            <button class="btn-icon danger" onclick="window.deleteProcedure('${procedure.id}')" title="Удалить">
+            <button class="btn-icon danger" onclick="window.deleteProcedure('${containerId}', '${procedure.id}')" title="Удалить">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -215,24 +226,33 @@ export function renderProceduresList(containerId, procedures, onUpdate, onDelete
         </div>
     `).join('');
     
-    window.updateProcedure = (id, field, value) => {
-        const procedure = procedures.find(p => p.id === id);
+    window.updateProcedure = (containerId, id, field, value) => {
+        const data = window.proceduresData[containerId];
+        if (!data) return;
+        
+        const procedure = data.procedures.find(p => p.id === id);
         if (procedure) {
             procedure[field] = field === 'duration' ? value : value;
-            onUpdate(procedures);
+            data.onUpdate(data.procedures);
         }
     };
     
-    window.deleteProcedure = async (id) => {
+    window.deleteProcedure = async (containerId, id) => {
+        const data = window.proceduresData[containerId];
+        if (!data) return;
+        
         // Удаляем локально сразу для мгновенного отклика
-        const filtered = procedures.filter(p => p.id !== id);
+        const filtered = data.procedures.filter(p => p.id !== id);
+        // Обновляем данные
+        data.procedures = filtered;
         // Обновляем UI сразу
-        renderProceduresList(containerId, filtered, onUpdate, onDelete);
+        renderProceduresList(containerId, filtered, data.onUpdate, data.onDelete);
         // Сохраняем в фоне
-        onUpdate(filtered).catch(error => {
+        data.onUpdate(filtered).catch(error => {
             console.error('Ошибка удаления процедуры:', error);
             // Откатываем при ошибке
-            renderProceduresList(containerId, procedures, onUpdate, onDelete);
+            data.procedures = [...data.procedures, ...data.procedures.filter(p => p.id === id)];
+            renderProceduresList(containerId, data.procedures, data.onUpdate, data.onDelete);
         });
     };
 }
