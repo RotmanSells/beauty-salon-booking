@@ -206,7 +206,6 @@ export async function handleDeleteBooking(bookingId) {
         }
     } catch (error) {
         console.error('Ошибка удаления записи:', error);
-        alert('Ошибка при удалении записи');
     }
 }
 
@@ -248,9 +247,6 @@ export function handleCallClient(phone) {
         // Если есть полный номер, открываем ссылку для звонка
         const phoneLink = `tel:${client.phone}`;
         window.location.href = phoneLink;
-    } else {
-        // Иначе показываем сообщение
-        alert(`Клиент найден, но полный номер не указан. Последние 4 цифры: ${phone}`);
     }
 }
 

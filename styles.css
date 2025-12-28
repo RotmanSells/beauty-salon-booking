@@ -37,6 +37,25 @@ body {
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+}
+
+/* Предотвращение увеличения экрана при фокусе на input (iOS) */
+input,
+textarea,
+select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+@media screen and (max-width: 768px) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
 }
 
 .app-container {

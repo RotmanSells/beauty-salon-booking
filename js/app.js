@@ -144,7 +144,6 @@ async function handleConfirmBooking() {
     const phoneInput = document.getElementById('phoneInput');
     
     if (!selectedProcedureBtn || !phoneInput) {
-        alert('Выберите процедуру');
         return;
     }
     
@@ -152,12 +151,10 @@ async function handleConfirmBooking() {
     const phone = phoneInput.value.replace(/\D/g, '');
     
     if (!procedureId) {
-        alert('Выберите процедуру');
         return;
     }
     
     if (!validatePhone(phone)) {
-        alert('Введите 4 последние цифры номера телефона');
         return;
     }
     
@@ -166,7 +163,6 @@ async function handleConfirmBooking() {
     const procedure = allProcedures.find(p => p.id === procedureId);
     
     if (!procedure) {
-        alert('Процедура не найдена');
         return;
     }
     
@@ -189,36 +185,12 @@ async function handleConfirmBooking() {
         
         closeModal('bookingModal');
         
-        // Показываем уведомление
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gradient-primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            font-weight: 600;
-            animation: slideDown 0.3s ease-out;
-        `;
-        notification.textContent = 'Запись создана успешно!';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideUp 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-        }, 2000);
-        
         // Обновляем календарь
         if (window.refreshCalendar) {
             window.refreshCalendar();
         }
     } catch (error) {
-        alert(error.message || 'Ошибка при создании записи');
+        console.error('Ошибка при создании записи:', error);
     }
 }
 
@@ -315,12 +287,9 @@ async function handleCallFromEdit(phoneLast4) {
         
         if (client && client.phone && client.phone.length > 4) {
             window.location.href = `tel:${client.phone}`;
-        } else {
-            alert(`Клиент найден, но полный номер не указан. Последние 4 цифры: ${phoneLast4}`);
         }
     } catch (error) {
         console.error('Ошибка при поиске клиента:', error);
-        alert('Ошибка при поиске номера телефона');
     }
 }
 
@@ -330,14 +299,12 @@ async function handleSaveEdit() {
     const selectedProcedureBtn = document.querySelector('.procedure-btn.selected');
     
     if (!selectedProcedureBtn) {
-        alert('Выберите процедуру');
         return;
     }
     
     const procedureId = selectedProcedureBtn.getAttribute('data-procedure-id');
     
     if (!procedureId) {
-        alert('Выберите процедуру');
         return;
     }
     
@@ -346,7 +313,6 @@ async function handleSaveEdit() {
     const procedure = allProcedures.find(p => p.id === procedureId);
     
     if (!procedure) {
-        alert('Процедура не найдена');
         return;
     }
     
@@ -372,32 +338,8 @@ async function handleSaveEdit() {
         
         currentEditingBooking = null;
         closeModal('editBookingModal');
-        
-        // Показываем уведомление
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gradient-primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            font-weight: 600;
-            animation: slideDown 0.3s ease-out;
-        `;
-        notification.textContent = 'Запись обновлена успешно!';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideUp 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-        }, 2000);
     } catch (error) {
-        alert(error.message || 'Ошибка при обновлении записи');
+        console.error('Ошибка при обновлении записи:', error);
     }
 }
 

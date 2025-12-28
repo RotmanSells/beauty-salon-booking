@@ -151,13 +151,12 @@ export async function addProcedure(type, name, duration) {
     renderProcedures();
     
     // Сохраняем в фоне
-    updateProcedures(procedures).catch(error => {
-        console.error('Ошибка сохранения процедуры:', error);
-        // Откатываем изменение при ошибке
-        procedures[type] = procedures[type].filter(p => p.id !== newProcedure.id);
-        renderProcedures();
-        alert('Ошибка при сохранении процедуры');
-    });
+        updateProcedures(procedures).catch(error => {
+            console.error('Ошибка сохранения процедуры:', error);
+            // Откатываем изменение при ошибке
+            procedures[type] = procedures[type].filter(p => p.id !== newProcedure.id);
+            renderProcedures();
+        });
     
     if (window.refreshCalendar) window.refreshCalendar();
     
@@ -181,7 +180,6 @@ export async function addClientsFromInput(input) {
     const phones = parsePhoneNumbers(input);
     
     if (phones.length === 0) {
-        alert('Не найдено ни одного номера телефона');
         return;
     }
     
@@ -189,11 +187,8 @@ export async function addClientsFromInput(input) {
         const newClients = await addClients(phones);
         clients = await getClients();
         renderClients();
-        
-        alert(`Добавлено клиентов: ${newClients.length}`);
     } catch (error) {
         console.error('Ошибка добавления клиентов:', error);
-        alert('Ошибка при добавлении клиентов');
     }
 }
 
@@ -210,7 +205,6 @@ function renderWorktime() {
 
 export async function saveWorktime(start, end) {
     if (!validateTimeRange(start, end)) {
-        alert('Время начала должно быть раньше времени окончания');
         return false;
     }
     
@@ -230,34 +224,9 @@ export async function saveWorktime(start, end) {
             window.refreshCalendar();
         }
         
-        // Показываем уведомление
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gradient-primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            font-weight: 600;
-            animation: slideDown 0.3s ease-out;
-        `;
-        notification.textContent = 'Время работы сохранено';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideUp 0.3s ease-out';
-            setTimeout(() => notification.remove(), 300);
-        }, 2000);
-        
         return true;
     } catch (error) {
         console.error('Ошибка сохранения времени работы:', error);
-        alert('Ошибка при сохранении времени работы');
         return false;
     }
 }
@@ -299,7 +268,6 @@ function renderBreaks() {
 
 export async function addBreak(start, end) {
     if (!validateTimeRange(start, end)) {
-        alert('Время начала должно быть раньше времени окончания');
         return false;
     }
     
@@ -326,7 +294,6 @@ export async function addBreak(start, end) {
         return true;
     } catch (error) {
         console.error('Ошибка добавления перерыва:', error);
-        alert('Ошибка при добавлении перерыва');
         return false;
     }
 }
